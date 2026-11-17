@@ -93,6 +93,28 @@ def macro_of(tag_list):
     return UNCLASSIFIED
 
 
+# Genre pairs that often co-occur on one real artist; disagreement between them is not a collision.
+ADJACENT = {frozenset(p) for p in [("indie", "rock"), ("indie", "folk"), ("indie", "pop"), ("indie", "rnb")]}
+
+
+def ambiguity(tag_list):
+    """{"korean": macro, "other": macro} when a non-Korean genre tag outranks the Korean sub-genre tag
+    and the two genres are far apart -- usually Last.fm merging same-name artists (Crush: heavy metal
+    above k-rnb). The skill asks the user which artist is meant instead of trusting the k- tag."""
+    # ponytail: rank + adjacency heuristic; tune ADJACENT if it asks about too many artists.
+    korean = other = None
+    for tag in (t.strip().lower() for t in tag_list):
+        if tag.startswith("k-") and tag not in ("k-pop", "k-pop idol"):
+            korean = _map_genre(tag[2:])
+            if korean:
+                break
+        elif other is None:
+            other = _map_genre(tag)
+    if korean and other and other != "k-pop" and korean != other and frozenset((korean, other)) not in ADJACENT:
+        return {"korean": korean, "other": other}
+    return None
+
+
 def group_tracks(tracks, tags):
     groups = {}
     for track in tracks:
@@ -154,6 +176,11 @@ def summarize(tracks, tags):
         "top_artists": [{"artist": a, "count": c} for a, c in artists.most_common(10)],
         "duplicates": find_duplicates(tracks),
         "unclassified_artists": unclassified,
+        "ambiguous_artists": [
+            {"artist": a, "tags": tags.get(artist_key(a), []), **amb}
+            for a in sorted({(t.get("artists") or ["?"])[0] for t in tracks})
+            if (amb := ambiguity([x.lower() for x in tags.get(artist_key(a), [])]))
+        ],
         "groups": {g: [t["uri"] for t in order_by_similarity(v, tags)] for g, v in groups.items()},
         "mix_order": [t["uri"] for t in mix_order(groups, tags)],
     }
@@ -171,7 +198,7 @@ def main(argv=None):
     a.out = Path(a.out).expanduser()
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
-    compact = {k: result[k] for k in ("total", "genres", "top_artists", "unclassified_artists")}
+    compact = {k: result[k] for k in ("total", "genres", "top_artists", "unclassified_artists", "ambiguous_artists")}
     compact["duplicate_count"] = len(result["duplicates"])
     compact["out"] = str(Path(a.out).resolve())
     sys.stdout.reconfigure(encoding="utf-8")

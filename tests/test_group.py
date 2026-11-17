@@ -4,6 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from group import macro_of, group_tracks, order_by_similarity, find_duplicates, summarize  # noqa: E402
+import group  # noqa: E402
 
 
 def t(uri, name, artist):
@@ -109,3 +110,19 @@ def test_summarize_counts_and_top_artists():
     assert s["genres"] == [{"genre": "hip-hop", "count": 2}, {"genre": "jazz", "count": 1}]
     assert s["top_artists"][0] == {"artist": "Drake", "count": 2}
     assert s["mix_order"][:2] == ["u1", "u2"]
+
+
+def test_ambiguity_flags_same_name_collision_only():
+    assert group.ambiguity(["heavy metal", "k-rnb", "rnb"]) == {"korean": "rnb", "other": "metal"} or \
+        group.ambiguity(["heavy metal", "k-rnb", "rnb"])["korean"] != group.ambiguity(["heavy metal", "k-rnb"])["other"]
+    assert group.ambiguity(["k-rnb", "rnb", "soul"]) is None   # agree
+    assert group.ambiguity(["k-rnb", "heavy metal"]) is None    # Korean tag ranks first
+    assert group.ambiguity(["singer-songwriter", "k-indie"]) is None  # adjacent genres
+    assert group.ambiguity(["k-pop", "dance"]) is None          # k-pop never counts
+    assert group.ambiguity(["indie", "rock"]) is None           # no Korean tag
+
+
+def test_summarize_reports_ambiguous_artists():
+    tracks = [{"uri": "u1", "name": "Beautiful", "artists": ["Crush"]}]
+    res = group.summarize(tracks, {"crush": ["heavy metal", "k-rnb"]})
+    assert [a["artist"] for a in res["ambiguous_artists"]] == ["Crush"]
