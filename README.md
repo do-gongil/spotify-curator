@@ -2,7 +2,7 @@
 
 [English](README.en.md) · 한국어 · **[튜토리얼](TUTORIAL.md)**
 
-나에게 맞는 플레이리스트를 추천하는 Plugin.
+나에게 맞는 플레이리스트를 만들어주는 Plugin.
 
 | 스킬 | 하는 일 | 예시 프롬프트 |
 |---|---|---|
@@ -69,7 +69,7 @@ Claude Code에서:
 - 플레이리스트 이름으로 지정
 - 곡 목록은 **본인 소유/공동** 플레이리스트만 읽힘 (팔로우만 한 플레이리스트, Spotify 알고리즘 플레이리스트 불가)
 - audio-features / recommendations / related-artists 사용 불가 → 유사도는 장르 태그 기반, 추천은 Claude + 검색 검증
-- artist genres는 Spotify Dev Mode에서 응답하지 않음 → Last.fm 태그에 의존. 동명 아티스트이 있을 수 있음. (예: 남성 or 여성 싱어송라이터 Dori). 
+- artist genres는 Spotify Dev Mode에서 응답하지 않음 → Last.fm 태그에 의존. 동명 아티스트이 있을 수 있음. (예: Dori | 남성 or 여성 싱어송라이터). 
 - Dev Mode는 개인·비상업 용도, 앱당 사용자 5명
 - 플레이리스트 삭제(언팔로우) 엔드포인트가 2026-02에 바뀌어 이 도구는 삭제를 지원하지 않음 → Spotify 앱에서 삭제
 - `replace`(재정렬)는 곡별 '추가한 날짜'를 초기화함. 로컬 파일/에피소드가 섞인 플레이리스트는 거부
