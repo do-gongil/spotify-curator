@@ -2,7 +2,7 @@
 
 [English](README.en.md) · 한국어 · **[튜토리얼](TUTORIAL.md)**
 
-Claude Code 플러그인. Spotify 플레이리스트를 장르별로 선별·생성·믹스·분석·확장한다.
+나에게 맞는 플레이리스트를 추천하는 Plugin.
 
 | 스킬 | 하는 일 | 예시 프롬프트 |
 |---|---|---|
@@ -14,13 +14,13 @@ Claude Code 플러그인. Spotify 플레이리스트를 장르별로 선별·생
 | `playlist-extend` | 플레이리스트 분위기에 맞는 곡 N개 추천·검증 후 추가 | "이 플레이리스트에 비슷한 곡 10개 더 넣어줘" |
 
 ## 요구사항
-- Python 3.7+ (표준 라이브러리만 사용, 설치할 패키지 없음. `pytest`는 테스트에만 필요). macOS/Linux에서 `python`이 없으면 `python3`
+- Python 3.7+ (`python` or `python3`)
 - Spotify **Premium** 계정 (2026-02 이후 Dev Mode 정책)
 - Claude Code
 
 ## 설정 (1회)
 
-**가장 쉬운 방법:** 설치 후 Claude Code에 "spotify-curator 설정해줘"라고 말하면 된다. 자세한 과정은 [튜토리얼](TUTORIAL.md).
+**가장 쉬운 방법:** 설치 후 Claude Code에 "spotify-curator 설정해줘"라고 말한 후 API 키를 발급하여 입력하면 된다. 자세한 과정은 [튜토리얼](TUTORIAL.md).
 아래는 수동 설정 방법이다. 환경변수 대신 `python scripts/spotify.py setup`(대화형)으로 `~/.spotify-curator/config.json`에 저장해도 되며, 환경변수가 있으면 우선한다. 점검: `python scripts/spotify.py doctor`.
 
 1. **Spotify 앱**
@@ -66,16 +66,14 @@ Claude Code에서:
 - `scripts/group.py` — 태그 → 메인 장르 매핑, 그룹핑, 유사도 순 정렬. 매핑이 틀리면 `EXACT`/`SUBSTR` 표를 수정
 
 ## 제약 (Spotify Web API, 신규 Dev Mode 앱)
-- 플레이리스트 **폴더**는 API로 읽을 수 없음 → 플레이리스트 이름으로 지정
+- 플레이리스트 이름으로 지정
 - 곡 목록은 **본인 소유/공동** 플레이리스트만 읽힘 (팔로우만 한 플레이리스트, Spotify 알고리즘 플레이리스트 불가)
 - audio-features / recommendations / related-artists 사용 불가 → 유사도는 장르 태그 기반, 추천은 Claude + 검색 검증
-- Spotify artist genres는 Dev Mode에서 비어 있음 → 사실상 Last.fm 태그에 의존. Last.fm은 동명 아티스트 태그가 섞임
-  (예: Crush에 heavy metal). `k-rnb`·`k-indie` 같은 한국 세부 장르 태그가 있으면 자동 우선하고, 그 외는
-  `python scripts/tags.py --set "Artist=genre1,genre2"`로 수동 지정
+- artist genres는 Spotify Dev Mode에서 응답하지 않음 → Last.fm 태그에 의존. 동명 아티스트이 있을 수 있음. (예: 남성 or 여성 싱어송라이터 Dori). 
 - Dev Mode는 개인·비상업 용도, 앱당 사용자 5명
 - 플레이리스트 삭제(언팔로우) 엔드포인트가 2026-02에 바뀌어 이 도구는 삭제를 지원하지 않음 → Spotify 앱에서 삭제
 - `replace`(재정렬)는 곡별 '추가한 날짜'를 초기화함. 로컬 파일/에피소드가 섞인 플레이리스트는 거부
-- Developer Terms의 AI 관련 조항(모델 학습 금지): 이 도구는 개인 큐레이션용이며 데이터를 학습에 쓰지 않음
+- 이 도구는 개인 큐레이션용이며 데이터 학습에 쓰지 않음
 
 ## 테스트
 ```
