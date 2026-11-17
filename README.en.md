@@ -2,7 +2,7 @@
 
 English · [한국어](README.md) · **[Tutorial](TUTORIAL.en.md)**
 
-A Claude Code plugin that curates your Spotify playlists: pick by genre, generate from a description, split/reorder by similarity, analyze, and extend.
+A plugin that builds playlists that fit you.
 
 | Skill | What it does | Example prompt |
 |---|---|---|
@@ -16,13 +16,13 @@ A Claude Code plugin that curates your Spotify playlists: pick by genre, generat
 Skill instructions and outputs are primarily Korean, but English requests work too.
 
 ## Requirements
-- Python 3.7+ (standard library only, nothing to install; `pytest` only for tests). Use `python3` if `python` is missing on macOS/Linux
+- Python 3.7+ (`python` or `python3`)
 - Spotify **Premium** account (required for Dev Mode apps since 2026-02)
 - Claude Code
 
 ## Setup (once)
 
-**Easiest:** after installing, tell Claude Code "set up spotify-curator". Full walkthrough: [Tutorial](TUTORIAL.en.md).
+**Easiest:** after installing, tell Claude Code "set up spotify-curator", then get the API keys and enter them. Full walkthrough: [Tutorial](TUTORIAL.en.md).
 Manual steps below. Instead of env vars you can run `python scripts/spotify.py setup` (interactive) to save keys to `~/.spotify-curator/config.json`; env vars take precedence. Check with `python scripts/spotify.py doctor`.
 
 1. **Spotify app**
@@ -68,15 +68,14 @@ For development: clone the repo and run `claude --plugin-dir <clone path>`.
 - `scripts/group.py` — tag → main genre mapping, grouping, similarity ordering. Fix wrong mappings in the `EXACT`/`SUBSTR` tables
 
 ## Limitations (Spotify Web API, new Dev Mode apps)
-- Playlist **folders** aren't readable via the API → refer to playlists by name
+- Refer to playlists by name
 - Only playlists you **own or collaborate on** can be read (not followed or Spotify-generated ones)
 - audio-features / recommendations / related-artists are unavailable → similarity is genre-tag based; recommendations come from Claude + search verification
-- Spotify artist genres are empty in Dev Mode → relies on Last.fm tags, which can mix up artists sharing a name.
-  Override with `python scripts/tags.py --set "Artist=genre1,genre2"`
+- Spotify Dev Mode does not return artist genres → relies on Last.fm tags. Different artists can share a name (e.g. Dori, used by both a male and a female singer-songwriter).
 - Dev Mode: personal, non-commercial use, max 5 users per app
 - Playlist deletion isn't supported (endpoint changed 2026-02) → delete in the Spotify app
 - `replace` (reorder) resets each track's "date added". Playlists containing local files/episodes are refused
-- Spotify Developer Terms (no model training): this tool is for personal curation and does not use data for training
+- This tool is for personal curation and does not use data for training
 
 ## Tests
 ```
