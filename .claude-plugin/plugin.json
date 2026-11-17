@@ -2,7 +2,9 @@
   "name": "spotify-curator",
   "version": "0.1.0",
   "description": "Spotify 플레이리스트 큐레이션: 장르별 선별, 설명으로 생성, 유사곡 믹스/분할, 분석 리포트, 비슷한 곡으로 확장",
-  "author": { "name": "dohyu" },
+  "author": { "name": "do-gongil", "url": "https://github.com/do-gongil" },
+  "homepage": "https://github.com/do-gongil/spotify-curator",
+  "repository": "https://github.com/do-gongil/spotify-curator",
   "license": "MIT",
   "keywords": ["spotify", "playlist", "music"]
 }

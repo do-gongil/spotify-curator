@@ -175,6 +175,7 @@ def main(argv=None):
     compact["duplicate_count"] = len(result["duplicates"])
     compact["out"] = str(Path(a.out).resolve())
     sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     print(json.dumps(compact, ensure_ascii=False, indent=1))
 
 

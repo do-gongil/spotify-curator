@@ -152,7 +152,7 @@ def _post_token(form):
     except urllib.error.HTTPError as e:
         body = e.read().decode(errors="replace")
         if "invalid_grant" in body:
-            die("토큰이 만료/취소되었습니다 (refresh token은 최초 승인 후 6개월). `spotify.py login`을 다시 실행하세요.")
+            die(f"토큰이 만료/취소되었습니다 (refresh token은 최초 승인 후 6개월). `python \"{Path(__file__).resolve()}\" login`을 다시 실행하세요.")
         try:
             err = json.loads(body)
             body = f"{err.get('error')}: {err.get('error_description', '')}"
@@ -219,7 +219,7 @@ def login():
 
 def access_token(force_refresh=False):
     if not TOKEN_FILE.exists():
-        die("로그인이 필요합니다: python spotify.py login")
+        die(f"로그인이 필요합니다: python \"{Path(__file__).resolve()}\" login")
     tok = json.loads(TOKEN_FILE.read_text(encoding="utf-8-sig"))
     if force_refresh or time.time() >= tok.get("expires_at", 0):
         new = _post_token({"grant_type": "refresh_token", "refresh_token": tok["refresh_token"],
@@ -436,6 +436,7 @@ def artist_genres(artist_id):
 
 def main(argv=None):
     sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("login").set_defaults(fn=lambda a: login())

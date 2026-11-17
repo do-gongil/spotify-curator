@@ -1,11 +1,11 @@
 {
-  "name": "spotify-curator-local",
-  "owner": { "name": "dohyu" },
+  "name": "spotify-curator",
+  "owner": { "name": "do-gongil" },
   "plugins": [
     {
       "name": "spotify-curator",
       "source": "./",
-      "description": "Spotify 플레이리스트 큐레이션 스킬 모음"
+      "description": "Spotify 플레이리스트 큐레이션 스킬 모음 / Spotify playlist curation skills"
     }
   ]
 }

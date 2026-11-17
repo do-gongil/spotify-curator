@@ -66,6 +66,7 @@ def save_cache(cache):
 
 def main(argv=None):
     sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("tracks", nargs="?")
     p.add_argument("--out")
