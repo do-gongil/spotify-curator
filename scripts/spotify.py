@@ -1,6 +1,8 @@
 """Minimal Spotify Web API CLI (stdlib only) for the spotify-curator plugin.
 
 Commands (outputs land in ~/.spotify-curator/work unless --out is given):
+  setup [--client-id] [--lastfm-key] [--port] [--open]  save keys to ~/.spotify-curator/config.json, then doctor
+  doctor                                  check keys, port, login and API access
   login                                   PKCE login in the browser (needs SPOTIFY_CLIENT_ID)
   playlists                               list your playlists (readable = you own / collaborate)
   items <playlist>... [--out f]           tracks of playlists (name, unique substring, id, or "liked")
@@ -31,10 +33,24 @@ from pathlib import Path
 HOME = Path(os.environ.get("SPOTIFY_CURATOR_HOME", Path.home() / ".spotify-curator"))
 WORK = HOME / "work"
 TOKEN_FILE = HOME / "token.json"
+CONFIG_FILE = HOME / "config.json"
+
+
+def setting(name, default=None):
+    """Env var wins, then ~/.spotify-curator/config.json (written by `setup`)."""
+    if os.environ.get(name):
+        return os.environ[name]
+    try:
+        return json.loads(CONFIG_FILE.read_text(encoding="utf-8-sig")).get(name) or default
+    except (FileNotFoundError, json.JSONDecodeError):
+        return default
+
+
+
 API = "https://api.spotify.com/v1"
 AUTH_URL = "https://accounts.spotify.com/authorize"
 TOKEN_URL = "https://accounts.spotify.com/api/token"
-PORT = int(os.environ.get("SPOTIFY_REDIRECT_PORT", "8888"))
+PORT = int(setting("SPOTIFY_REDIRECT_PORT", "8888"))
 REDIRECT_URI = f"http://127.0.0.1:{PORT}/callback"
 SCOPES = " ".join([
     "playlist-read-private", "playlist-read-collaborative",
@@ -49,9 +65,9 @@ def die(msg):
 
 
 def client_id():
-    cid = os.environ.get("SPOTIFY_CLIENT_ID")
+    cid = setting("SPOTIFY_CLIENT_ID")
     if not cid:
-        die("SPOTIFY_CLIENT_ID 환경변수가 없습니다. README의 설정 단계를 참고하세요.")
+        die(f"SPOTIFY_CLIENT_ID가 없습니다. 설정: python \"{Path(__file__).resolve()}\" setup")
     return cid
 
 
@@ -430,6 +446,86 @@ def cmd_replace(a):
 # (replacement DELETE /me/library is untested). Delete playlists in the Spotify app.
 
 
+def save_config(updates):
+    cfg = {}
+    if CONFIG_FILE.exists():
+        cfg = json.loads(CONFIG_FILE.read_text(encoding="utf-8-sig"))
+    cfg = {**cfg, **{k: str(v).strip() for k, v in updates.items() if v}}
+    HOME.mkdir(parents=True, exist_ok=True, mode=0o700)
+    fd = os.open(CONFIG_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, indent=2)
+    return cfg
+
+
+def valid_client_id(cid):
+    return bool(re.fullmatch(r"[0-9a-f]{32}", cid or ""))
+
+
+def cmd_setup(a):
+    import getpass
+    print("1) https://developer.spotify.com/dashboard → Create app (API: Web API)")
+    print(f"   Redirect URI: {REDIRECT_URI}")
+    print("   Settings → User Management 에 본인 Spotify 계정 이메일 등록")
+    print("2) https://www.last.fm/api/account/create → API key 발급")
+    if a.open:
+        webbrowser.open("https://developer.spotify.com/dashboard")
+    cid, key = a.client_id, a.lastfm_key
+    # ponytail: prompt only when no flags given (Claude passes flags; Windows NUL looks like a tty)
+    if not (cid or key or a.port) and sys.stdin.isatty():
+        cid = cid or input(f"Spotify Client ID [{setting('SPOTIFY_CLIENT_ID') or '없음'}]: ").strip()
+        key = key or getpass.getpass("Last.fm API key (입력 숨김, 엔터=유지): ").strip()
+    if cid and not valid_client_id(cid):
+        die("Client ID 형식이 아닙니다 (32자리 16진수). Dashboard → 앱 → Settings에서 복사하세요.")
+    save_config({"SPOTIFY_CLIENT_ID": cid, "LASTFM_API_KEY": key, "SPOTIFY_REDIRECT_PORT": a.port})
+    print(f"저장: {CONFIG_FILE}")
+    cmd_doctor(a)
+
+
+def cmd_doctor(a):
+    import socket
+    ok = True
+
+    def check(passed, msg, fix=""):
+        nonlocal ok
+        ok = ok and passed
+        print(("[OK]   " if passed else "[FAIL] ") + msg + ("" if passed or not fix else f"\n       → {fix}"))
+
+    me = Path(__file__).resolve()
+    check(valid_client_id(setting("SPOTIFY_CLIENT_ID")), "Spotify Client ID", f'python "{me}" setup')
+    key = setting("LASTFM_API_KEY")
+    if key:
+        try:
+            q = urllib.parse.urlencode({"method": "artist.gettoptags", "artist": "Radiohead",
+                                        "api_key": key, "format": "json"})
+            with urllib.request.urlopen("https://ws.audioscrobbler.com/2.0/?" + q, timeout=20) as r:
+                check("error" not in json.load(r), "Last.fm API key", "키를 다시 확인하고 setup 재실행")
+        except (urllib.error.URLError, json.JSONDecodeError) as e:
+            check(getattr(e, "code", 0) != 403, f"Last.fm API key ({getattr(e, 'code', '') or type(e).__name__})",
+                  "키를 다시 확인하고 setup 재실행")
+    else:
+        check(False, "Last.fm API key (없으면 장르 정확도가 낮음)", f'python "{me}" setup')
+    if not TOKEN_FILE.exists():
+        with socket.socket() as s:
+            free = s.connect_ex(("127.0.0.1", PORT)) != 0
+        check(free, f"로그인 포트 {PORT} 사용 가능",
+              "다른 포트를 Dashboard Redirect URI에 등록하고 setup --port <번호>")
+        check(False, "Spotify 로그인", f'python "{me}" login')
+    else:
+        try:
+            u = api("GET", "/me")
+            check(True, f"Spotify 로그인 ({u.get('display_name') or u.get('id')})")
+            api("GET", "/me/playlists", {"limit": 1})
+            check(True, "Spotify API 접근")
+        except urllib.error.HTTPError as e:
+            check(False, f"Spotify API {e.code}",
+                  "Dashboard → User Management에 본인 이메일 등록, Premium 계정인지 확인" if e.code == 403
+                  else f'python "{me}" login')
+    print("준비 완료" if ok else "위 [FAIL] 항목을 해결하세요")
+    if not ok:
+        raise SystemExit(1)
+
+
 def artist_genres(artist_id):
     return api("GET", f"/artists/{artist_id}").get("genres", [])
 
@@ -440,6 +536,10 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("login").set_defaults(fn=lambda a: login())
+    s = sub.add_parser("setup", help="키 입력/저장 후 doctor 실행 (인자 생략 시 대화형)")
+    s.add_argument("--client-id"); s.add_argument("--lastfm-key"); s.add_argument("--port", type=int)
+    s.add_argument("--open", action="store_true", help="Spotify Dashboard를 브라우저로 열기"); s.set_defaults(fn=cmd_setup)
+    sub.add_parser("doctor", help="설정/로그인/권한 점검").set_defaults(fn=cmd_doctor)
     sub.add_parser("playlists").set_defaults(fn=cmd_playlists)
     s = sub.add_parser("items"); s.add_argument("playlists", nargs="+"); s.add_argument("--out"); s.set_defaults(fn=cmd_items)
     s = sub.add_parser("search"); s.add_argument("queries", nargs="*"); s.add_argument("--file"); s.add_argument("--out"); s.set_defaults(fn=cmd_search)

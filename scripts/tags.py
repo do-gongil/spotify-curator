@@ -91,7 +91,7 @@ def main(argv=None):
         if t.get("artists"):
             artists.setdefault(t["artists"][0].strip().lower(), (t["artists"][0], (t.get("artist_ids") or [None])[0]))
 
-    key = os.environ.get("LASTFM_API_KEY")
+    key = spotify.setting("LASTFM_API_KEY")
     if not key:
         print("WARN: LASTFM_API_KEY 없음 — Spotify genres만 사용합니다 (정확도 낮음).", file=sys.stderr)
     stats = {"cache": 0, "lastfm": 0, "spotify": 0, "empty": 0}

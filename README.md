@@ -1,6 +1,6 @@
 # spotify-curator
 
-[English](README.en.md) · 한국어
+[English](README.en.md) · 한국어 · **[튜토리얼](TUTORIAL.md)**
 
 Claude Code 플러그인. Spotify 플레이리스트를 장르별로 선별·생성·믹스·분석·확장한다.
 
@@ -10,6 +10,7 @@ Claude Code 플러그인. Spotify 플레이리스트를 장르별로 선별·생
 | `playlist-from-prompt` | 짧은 설명 → Claude가 후보 선정 → Spotify 검색으로 실존 검증 → 생성 | "비 오는 밤 운전용 시티팝 25곡 만들어줘" |
 | `playlist-mix` | 한 플레이리스트를 유사 그룹별 하위 플레이리스트로 분할 + 원본을 비슷한 곡끼리 재정렬(자동 백업) | "이 플레이리스트 장르별로 나눠줘" |
 | `playlist-report` | 장르 분포, 아티스트 편중, 중복곡 요약 (읽기 전용) | "내 좋아요 곡 분석해줘" |
+| `setup` | 키 저장, 로그인, 권한 점검(`doctor`)을 단계별 안내 | "spotify-curator 설정해줘" |
 | `playlist-extend` | 플레이리스트 분위기에 맞는 곡 N개 추천·검증 후 추가 | "이 플레이리스트에 비슷한 곡 10개 더 넣어줘" |
 
 ## 요구사항
@@ -18,6 +19,9 @@ Claude Code 플러그인. Spotify 플레이리스트를 장르별로 선별·생
 - Claude Code
 
 ## 설정 (1회)
+
+**가장 쉬운 방법:** 설치 후 Claude Code에 "spotify-curator 설정해줘"라고 말하면 된다. 자세한 과정은 [튜토리얼](TUTORIAL.md).
+아래는 수동 설정 방법이다. 환경변수 대신 `python scripts/spotify.py setup`(대화형)으로 `~/.spotify-curator/config.json`에 저장해도 되며, 환경변수가 있으면 우선한다. 점검: `python scripts/spotify.py doctor`.
 
 1. **Spotify 앱**
    - https://developer.spotify.com/dashboard → Create app → API: *Web API*
@@ -51,8 +55,8 @@ Claude Code에서:
 개발 중에는 저장소를 클론해서 `claude --plugin-dir <클론 경로>`.
 
 ## 데이터와 보안
-- 데이터 위치: `~/.spotify-curator/` (`token.json`, `tags_cache.json`, `work/`, `backups/`). `SPOTIFY_CURATOR_HOME`으로 변경 가능
-- `token.json`은 **평문**으로 저장된다 (POSIX에선 0600). 공유 폴더에 두지 말 것
+- 데이터 위치: `~/.spotify-curator/` (`config.json`, `token.json`, `tags_cache.json`, `work/`, `backups/`). `SPOTIFY_CURATOR_HOME`으로 변경 가능
+- `config.json`(키)과 `token.json`은 **평문**으로 저장된다 (POSIX에선 0600). 공유 폴더에 두지 말 것
 - 로그아웃: `token.json` 삭제 후 Spotify 계정 설정 → Apps에서 앱 접근 해제
 - 새로 만드는 플레이리스트는 비공개. 삭제 기능은 없음. 재정렬 전에는 자동 백업
 

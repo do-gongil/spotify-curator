@@ -1,6 +1,6 @@
 # spotify-curator
 
-English · [한국어](README.md)
+English · [한국어](README.md) · **[Tutorial](TUTORIAL.en.md)**
 
 A Claude Code plugin that curates your Spotify playlists: pick by genre, generate from a description, split/reorder by similarity, analyze, and extend.
 
@@ -10,6 +10,7 @@ A Claude Code plugin that curates your Spotify playlists: pick by genre, generat
 | `playlist-from-prompt` | Short description → Claude proposes candidates → verified via Spotify search → playlist created | "Make a 25-song rainy-night city pop playlist" |
 | `playlist-mix` | Split a playlist into sub-playlists by similarity group, or reorder it so similar songs flow together (auto backup) | "Split my playlist by genre" |
 | `playlist-report` | Genre distribution, artist concentration, duplicates (read-only) | "Analyze my Liked Songs" |
+| `setup` | Step-by-step key setup, login and checks (`doctor`) | "set up spotify-curator" |
 | `playlist-extend` | Recommend, verify and add N tracks matching a playlist's vibe | "Add 10 similar songs to this playlist" |
 
 Skill instructions and outputs are primarily Korean, but English requests work too.
@@ -20,6 +21,9 @@ Skill instructions and outputs are primarily Korean, but English requests work t
 - Claude Code
 
 ## Setup (once)
+
+**Easiest:** after installing, tell Claude Code "set up spotify-curator". Full walkthrough: [Tutorial](TUTORIAL.en.md).
+Manual steps below. Instead of env vars you can run `python scripts/spotify.py setup` (interactive) to save keys to `~/.spotify-curator/config.json`; env vars take precedence. Check with `python scripts/spotify.py doctor`.
 
 1. **Spotify app**
    - https://developer.spotify.com/dashboard → Create app → API: *Web API*
@@ -53,8 +57,8 @@ If login is needed while a skill runs, Claude prints the exact command to run.
 For development: clone the repo and run `claude --plugin-dir <clone path>`.
 
 ## Data & security
-- Data lives in `~/.spotify-curator/` (`token.json`, `tags_cache.json`, `work/`, `backups/`); override with `SPOTIFY_CURATOR_HOME`
-- `token.json` is stored in **plain text** (0600 on POSIX). Keep it out of shared folders
+- Data lives in `~/.spotify-curator/` (`config.json`, `token.json`, `tags_cache.json`, `work/`, `backups/`); override with `SPOTIFY_CURATOR_HOME`
+- `config.json` (keys) and `token.json` are stored in **plain text** (0600 on POSIX). Keep it out of shared folders
 - Log out: delete `token.json` and revoke the app under Spotify account settings → Apps
 - New playlists are private. No delete command. Reorders are backed up first
 

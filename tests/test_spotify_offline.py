@@ -188,3 +188,22 @@ def test_clean_lastfm_tags_drops_junk_and_low_counts():
     raw = [{"name": "Hip-Hop", "count": 100}, {"name": "seen live", "count": 80},
            {"name": "rap", "count": 50}, {"name": "drake", "count": 30}, {"name": "rare", "count": 2}]
     assert tagmod.clean_tags(raw, artist="Drake") == ["hip-hop", "rap"]
+
+
+def test_setting_env_wins_over_config_and_save_merges(tmp_path, monkeypatch):
+    monkeypatch.setattr(spotify, "HOME", tmp_path)
+    monkeypatch.setattr(spotify, "CONFIG_FILE", tmp_path / "config.json")
+    monkeypatch.delenv("LASTFM_API_KEY", raising=False)
+    assert spotify.setting("LASTFM_API_KEY", "d") == "d"
+    spotify.save_config({"LASTFM_API_KEY": "k1", "SPOTIFY_CLIENT_ID": "c" * 32})
+    spotify.save_config({"LASTFM_API_KEY": "", "SPOTIFY_REDIRECT_PORT": 9999})  # empty keeps old
+    assert spotify.setting("LASTFM_API_KEY") == "k1"
+    assert spotify.setting("SPOTIFY_REDIRECT_PORT") == "9999"
+    monkeypatch.setenv("LASTFM_API_KEY", "env")
+    assert spotify.setting("LASTFM_API_KEY") == "env"
+
+
+def test_valid_client_id():
+    assert spotify.valid_client_id("0123456789abcdef0123456789abcdef")
+    assert not spotify.valid_client_id("<client id>")
+    assert not spotify.valid_client_id(None)
